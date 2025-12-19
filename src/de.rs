@@ -357,13 +357,28 @@ impl<'de> Deserializer<'de> {
                 // LineTerminator is forbidden except U+2028 and U+2029 are explicitly allowed.
                 return Err(self.err_at(offset, ErrorCode::LineTerminatorInString));
             } else if c == '\\' {
+                // processing raw strings in single quotes
+                if delimiter == '\'' {
+                    // if the next character is a quotation mark, escape it
+                    if let Some((_, next_c)) = self.peek() {
+                        if next_c == '\'' {
+                            let owned = owned.get_or_insert(self.input[start..offset].to_owned());
+                            self.next(); // skip the quote itself in the stream
+                            owned.push('\''); // add a quotation mark to the result
+                            continue;
+                        }
+                    }
+                    // raw string behavior
+                    if let Some(owned) = &mut owned {
+                        owned.push(c);
+                    }
+                    continue;
+                }
+
                 let owned = owned.get_or_insert(self.input[start..offset].to_owned());
                 if let Some(c) = self.parse_escape_sequence(offset)? {
                     owned.push(c);
                 }
-            } else if let Some(owned) = &mut owned {
-                owned.push(c);
-            }
         }
     }
 

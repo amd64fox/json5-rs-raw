@@ -379,6 +379,9 @@ impl<'de> Deserializer<'de> {
                 if let Some(c) = self.parse_escape_sequence(offset)? {
                     owned.push(c);
                 }
+            } else if let Some(owned) = &mut owned {
+                owned.push(c);
+            }
         }
     }
 
